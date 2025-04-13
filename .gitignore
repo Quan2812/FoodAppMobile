@@ -27,10 +27,11 @@
 *.swp
 *.swo
 
-# Tệp log và tạm
+# Tệp log, debug và tạm
 *.log
 *.tmp
 *.temp
+android/app/.cxx/Debug/
 
 # Các nền tảng cụ thể
 /android/        # Nếu không cần theo dõi toàn bộ thư mục Android
