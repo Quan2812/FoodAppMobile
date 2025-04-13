@@ -1,6 +1,7 @@
 ﻿# Tệp và thư mục tạm thời
 *.iml
-*.idea/          # Thư mục của IntelliJ IDEA (Android Studio)
+*.idea/
+.idea/          # Thư mục của IntelliJ IDEA (Android Studio)
 *.dart_tool/     # Thư mục công cụ Dart
 .dart_tool/
 .packages
