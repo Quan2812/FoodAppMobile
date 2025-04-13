@@ -1,0 +1,48 @@
+﻿# Tệp và thư mục tạm thời
+*.iml
+*.idea/          # Thư mục của IntelliJ IDEA (Android Studio)
+*.dart_tool/     # Thư mục công cụ Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+
+# Thư mục build
+/build/
+
+# Tệp cấu hình cục bộ
+*.lock           # Bao gồm pubspec.lock nếu không muốn theo dõi (tùy chọn, nhưng thường giữ lại trong Flutter)
+*.yaml          # Tệp YAML cục bộ (nếu có, trừ pubspec.yaml)
+
+# Tệp nhạy cảm
+.env             # Tệp môi trường chứa thông tin nhạy cảm
+*.key
+*.pem
+*.cer
+
+# Hệ điều hành và IDE
+.DS_Store        # macOS
+.vscode/         # Visual Studio Code (nếu không cần chia sẻ cấu hình)
+*.swp
+*.swo
+
+# Tệp log và tạm
+*.log
+*.tmp
+*.temp
+
+# Các nền tảng cụ thể
+/android/        # Nếu không cần theo dõi toàn bộ thư mục Android
+/ios/           # Nếu không cần theo dõi toàn bộ thư mục iOS
+/macOS/         # Nếu không cần theo dõi toàn bộ thư mục macOS
+/windows/       # Nếu không cần theo dõi toàn bộ thư mục Windows
+/linux/         # Nếu không cần theo dõi toàn bộ thư mục Linux
+
+# Tệp được tạo tự động
+flutter_*.dart
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+
+# Tệp phân tích (nếu không cần)
+analysis_options.yaml  # Tùy chọn, thường giữ lại để chia sẻ quy tắc lint
