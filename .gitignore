@@ -45,5 +45,20 @@ flutter_*.dart
 *.freezed.dart
 *.mocks.dart
 
+# Flutter metadata
+.metadata
+
+# Flutter plugin files
+.flutter-plugins
+.flutter-plugins-dependencies
+
 # Tệp phân tích (nếu không cần)
 analysis_options.yaml  # Tùy chọn, thường giữ lại để chia sẻ quy tắc lint
+
+# Android specific
+/android/local.properties
+/android/.gradle/
+/android/app/build/
+/android/build/
+/android/*.keystore
+/android/*.jks

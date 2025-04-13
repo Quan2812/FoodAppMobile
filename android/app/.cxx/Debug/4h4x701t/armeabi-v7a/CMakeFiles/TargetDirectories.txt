@@ -1,0 +1,2 @@
+D:/Projects/food_delivery-main/food_delivery-main/android/app/.cxx/Debug/4h4x701t/armeabi-v7a/CMakeFiles/edit_cache.dir
+D:/Projects/food_delivery-main/food_delivery-main/android/app/.cxx/Debug/4h4x701t/armeabi-v7a/CMakeFiles/rebuild_cache.dir
