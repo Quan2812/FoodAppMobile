@@ -12,8 +12,26 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'common/globs.dart';
 import 'common/my_http_overrides.dart';
+import 'package:provider/provider.dart';
+import 'package:food_delivery/provider/cart_provider.dart';
+
 
 SharedPreferences? prefs;
+// void main() async {
+//   setUpLocator();
+//   HttpOverrides.global = MyHttpOverrides();
+//   WidgetsFlutterBinding.ensureInitialized();
+//   prefs = await SharedPreferences.getInstance();
+//
+//   if (Globs.udValueString(Globs.userLogin) == "true") {
+//     ServiceCall.userPayload = Globs.udValue(Globs.userPayload);
+//   }
+//
+//   runApp(const MyApp(
+//     defaultHome: StartupView(),
+//   ));
+// }
+
 void main() async {
   setUpLocator();
   HttpOverrides.global = MyHttpOverrides();
@@ -24,9 +42,16 @@ void main() async {
     ServiceCall.userPayload = Globs.udValue(Globs.userPayload);
   }
 
-  runApp(const MyApp(
-    defaultHome: StartupView(),
-  ));
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => CartProvider()),
+      ],
+      child: const MyApp(
+        defaultHome: StartupView(),
+      ),
+    ),
+  );
 }
 
 void configLoading() {

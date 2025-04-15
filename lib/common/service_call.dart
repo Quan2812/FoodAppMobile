@@ -12,7 +12,7 @@ class ServiceCall {
   static Map userPayload = {};
 
   // ✅ Thêm baseUrl
-  static const String baseUrl = "https://10.0.2.2:7064/api"; // <-- chỉnh chỗ này
+  static const String baseUrl = "https://10.0.2.2:1228/api"; // <-- chỉnh chỗ này
 
   // ✅ Hàm POST chuẩn
   static void post(String endpoint, Map<String, dynamic> parameter,

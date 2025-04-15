@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:food_delivery/common_widget/round_icon_button.dart';
 import 'package:intl/intl.dart';
-
+import 'package:provider/provider.dart';
 import '../../common/color_extension.dart';
+import '../../models/product.dart';
+import '../../provider/cart_provider.dart';
 import '../more/my_order_view.dart';
 
 class ItemDetailsView extends StatefulWidget {
@@ -345,11 +347,7 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                                                     height: 15,
                                                   ),
                                                   Text(
-                                                    (widget.item[
-                                                                "price"] *
-                                                            qty)
-                                                        .toStringAsFixed(3)
-                                                        .replaceAll(".", ","),
+                                                    ("${NumberFormat("#,###", "vi_VN").format(widget.item["price"] * qty)}"),
                                                     style: TextStyle(
                                                         color:
                                                             TColor.primaryText,
@@ -368,7 +366,14 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                                                         icon:
                                                             "https://res.cloudinary.com/dfya8dc81/image/upload/v1738811579/shopping_add_fojqkn.png",
                                                         color: TColor.primary,
-                                                        onPressed: () {}),
+                                                        onPressed: () {
+                                                          final product = Product.fromJson(widget.item);
+                                                          Provider.of<CartProvider>(context, listen: false).addItem(product, qty);
+                                                          print("Sản phẩm: ${product.nameProduct}");
+                                                          ScaffoldMessenger.of(context).showSnackBar(
+                                                            SnackBar(content: Text('Đã thêm vào giỏ hàng!')),
+                                                          );
+                                                        }),
                                                   )
                                                 ],
                                               )),

@@ -47,7 +47,7 @@ class _MenuItemsViewState extends State<MenuItemsView> {
                     ),
                     Expanded(
                       child: Text(
-                        widget.mObj["name"].toString(),
+                        widget.mObj["nameProductType"].toString(),
                         style: TextStyle(
                             color: TColor.primaryText,
                             fontSize: 20,
