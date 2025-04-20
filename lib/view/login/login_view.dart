@@ -226,7 +226,7 @@ class _LoginViewState extends State<LoginView> {
         Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
-              builder: (context) => const OnBoardingView(),
+              builder: (context) => const MainTabView(),
             ),
             (route) => false);
       } else {

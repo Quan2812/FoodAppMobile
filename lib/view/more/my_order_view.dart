@@ -99,16 +99,16 @@ class _MyOrderViewState extends State<MyOrderView> {
         withSuccess: (responseObj) async {
           if (responseObj.isNotEmpty) {
             Globs.hideHUD();
-            mdShowAlert(Globs.appName, responseObj["data"], () {});
+            // mdShowAlert(Globs.appName, responseObj["data"], () {});
             serviceGetCard(); // Refresh cart after adding
           } else {
             Globs.hideHUD();
-            mdShowAlert(Globs.appName, responseObj["data"], () {});
+            mdShowAlert(Globs.appName, "Sản phẩm đã hết số lượng", () {});
           }
         },
         failure: (err) async {
           Globs.hideHUD();
-          mdShowAlert(Globs.appName, err.toString(), () {});
+          mdShowAlert(Globs.appName, "Có lỗi xảy ra vui lòng load lại giỏ hàng", () {});
         });
   }
 

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:food_delivery/common/color_extension.dart';
 import 'package:food_delivery/common_widget/round_button.dart';
-
-import 'change_address_view.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'recipient_form.dart';
 import 'checkout_message_view.dart';
 
 class CheckoutView extends StatefulWidget {
   final double subtotal;
-  final double fee = 20.000;
-  final discount = 15.000;
+  final double discount = 15.000;
   const CheckoutView({super.key, required this.subtotal});
 
   @override
@@ -20,21 +22,126 @@ class _CheckoutViewState extends State<CheckoutView> {
     {
       "name": "Tiền mặt",
       "icon":
-          "https://res.cloudinary.com/dfya8dc81/image/upload/v1738811558/cash_ewuwuz.png"
+      "https://res.cloudinary.com/dfya8dc81/image/upload/v1738811558/cash_ewuwuz.png"
     },
     {
       "name": "**** **** **** 2187",
       "icon":
-          "https://res.cloudinary.com/dfya8dc81/image/upload/v1738811583/visa_icon_wk5tiz.png"
+      "https://res.cloudinary.com/dfya8dc81/image/upload/v1738811583/visa_icon_wk5tiz.png"
     },
     {
       "name": "test@gmail.com",
       "icon":
-          "https://res.cloudinary.com/dfya8dc81/image/upload/v1738811577/paypal_hyx4tl.png"
+      "https://res.cloudinary.com/dfya8dc81/image/upload/v1738811577/paypal_hyx4tl.png"
     },
   ];
 
   int selectMethod = -1;
+  AddressData? addressData;
+  double fee = 20.000;
+  bool isLoadingFee = false;
+
+  final String ghnToken = 'd69d5ac4-428d-11ee-a6e6-e60958111f48'; // Thay bằng token mới
+  final String shopId = '125587'; // Thay bằng ShopId đúng
+
+  Map<String, String> get ghnHeaders => {
+    "Content-Type": "application/json",
+    "Token": ghnToken,
+    "ShopId": shopId, // Thêm lại ShopId theo yêu cầu của API
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    addressData = AddressData(
+      fullName: '',
+      province: 'Brooklyn',
+      provinceId: 0,
+      district: '',
+      districtId: 0,
+      ward: '',
+      wardCode: '',
+      address: '653 Nostrand Ave.',
+      phone: '',
+      email: '',
+      notes: '',
+    );
+    fetchShippingFee();
+  }
+
+  Future<void> fetchShippingFee() async {
+    if (addressData == null || addressData!.districtId == 0 || addressData!.wardCode.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      isLoadingFee = true;
+    });
+
+    int toDistrictId = addressData!.districtId;
+    String toWardCode = addressData!.wardCode;
+
+    const int weight = 1000;
+
+    try {
+      final response = await http.post(
+        Uri.parse('https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/fee'),
+        headers: ghnHeaders,
+        body: jsonEncode({
+          "service_id": 53320,
+          "to_district_id": toDistrictId,
+          "to_ward_code": toWardCode,
+          "weight": weight
+        }),
+      );
+
+      print("Bắt đầu call API lấy phí - toDistrictId: $toDistrictId, toWardCode: $toWardCode");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) {
+          setState(() {
+            fee = (data['data']['total']).toDouble();
+            isLoadingFee = false;
+          });
+        } else {
+          print('API error: ${data['message']}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi khi tính phí giao hàng: ${data['message']}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          setState(() {
+            isLoadingFee = false;
+          });
+        }
+      } else {
+        print('Failed to fetch shipping fee: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Không thể tính phí giao hàng: ${response.statusCode}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          isLoadingFee = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching shipping fee: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Có lỗi xảy ra khi tính phí giao hàng.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      setState(() {
+        isLoadingFee = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,9 +153,7 @@ class _CheckoutViewState extends State<CheckoutView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(
-                height: 46,
-              ),
+              const SizedBox(height: 46),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15),
                 child: Row(
@@ -62,67 +167,69 @@ class _CheckoutViewState extends State<CheckoutView> {
                           width: 20,
                           height: 20),
                     ),
-                    const SizedBox(
-                      width: 8,
-                    ),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         "Thanh toán",
-                        style: TextStyle(
-                            color: TColor.primaryText,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800),
+                        style: GoogleFonts.notoSans(
+                          color: TColor.primaryText,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 15, horizontal: 25),
+                padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 25),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       "Địa chỉ giao hàng",
                       textAlign: TextAlign.center,
-                      style:
-                          TextStyle(color: TColor.secondaryText, fontSize: 12),
+                      style: GoogleFonts.notoSans(
+                        color: TColor.secondaryText,
+                        fontSize: 12,
+                      ),
                     ),
-                    const SizedBox(
-                      height: 8,
-                    ),
+                    const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         Expanded(
                           child: Text(
-                            "653 Nostrand Ave.\nBrooklyn, NY 11216",
-                            style: TextStyle(
-                                color: TColor.primaryText,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700),
+                            "${addressData!.address}\n${addressData!.province}${addressData!.district.isNotEmpty ? ', ${addressData!.district}' : ''}${addressData!.ward.isNotEmpty ? ', ${addressData!.ward}' : ''}",
+                            style: GoogleFonts.notoSans(
+                              color: TColor.primaryText,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
-                        const SizedBox(
-                          width: 4,
-                        ),
+                        const SizedBox(width: 4),
                         TextButton(
-                          onPressed: () {
-                            Navigator.push(
+                          onPressed: () async {
+                            final result = await Navigator.push(
                               context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      const ChangeAddressView()),
+                              MaterialPageRoute(builder: (context) => RecipientForm()),
                             );
+                            if (result != null && result is AddressData) {
+                              setState(() {
+                                addressData = result;
+                                fetchShippingFee();
+                              });
+                            }
                           },
                           child: Text(
                             "Thay đổi",
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                                color: TColor.primary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700),
+                            style: GoogleFonts.notoSans(
+                              color: TColor.primary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         )
                       ],
@@ -130,9 +237,7 @@ class _CheckoutViewState extends State<CheckoutView> {
                   ],
                 ),
               ),
-              const SizedBox(
-                height: 20,
-              ),
+              const SizedBox(height: 20),
               Container(
                 decoration: BoxDecoration(color: TColor.textfield),
                 height: 8,
@@ -148,20 +253,22 @@ class _CheckoutViewState extends State<CheckoutView> {
                         Text(
                           "Phương thức thanh toán",
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                              color: TColor.secondaryText,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500),
+                          style: GoogleFonts.notoSans(
+                            color: TColor.secondaryText,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                         TextButton.icon(
                           onPressed: () {},
                           icon: Icon(Icons.add, color: TColor.primary),
                           label: Text(
                             "Thêm thẻ",
-                            style: TextStyle(
-                                color: TColor.primary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700),
+                            style: GoogleFonts.notoSans(
+                              color: TColor.primary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         )
                       ],
@@ -181,23 +288,21 @@ class _CheckoutViewState extends State<CheckoutView> {
                                 color: TColor.textfield,
                                 borderRadius: BorderRadius.circular(5),
                                 border: Border.all(
-                                    color:
-                                        TColor.secondaryText.withOpacity(0.2))),
+                                    color: TColor.secondaryText.withOpacity(0.2))),
                             child: Row(
                               children: [
                                 Image.network(pObj["icon"].toString(),
                                     width: 50, height: 20, fit: BoxFit.contain),
-                                // const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     pObj["name"],
-                                    style: TextStyle(
-                                        color: TColor.primaryText,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500),
+                                    style: GoogleFonts.notoSans(
+                                      color: TColor.primaryText,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ),
-
                                 InkWell(
                                   onTap: () {
                                     setState(() {
@@ -219,9 +324,7 @@ class _CheckoutViewState extends State<CheckoutView> {
                   ],
                 ),
               ),
-              const SizedBox(
-                height: 20,
-              ),
+              const SizedBox(height: 20),
               Container(
                 decoration: BoxDecoration(color: TColor.textfield),
                 height: 8,
@@ -231,119 +334,121 @@ class _CheckoutViewState extends State<CheckoutView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(
-                      height: 15,
-                    ),
+                    const SizedBox(height: 15),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           "Tạm tính",
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                              color: TColor.primaryText,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500),
+                          style: GoogleFonts.notoSans(
+                            color: TColor.primaryText,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                         Text(
-                          widget.subtotal.toStringAsFixed(3),
-                          style: TextStyle(
-                              color: TColor.primaryText,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700),
+                          ("${NumberFormat("#,###", "vi_VN").format(widget.subtotal)}"),
+                          style: GoogleFonts.notoSans(
+                            color: TColor.primaryText,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
                         )
                       ],
                     ),
-                    const SizedBox(
-                      height: 8,
-                    ),
+                    const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           "Phí giao hàng",
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                              color: TColor.primaryText,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500),
+                          style: GoogleFonts.notoSans(
+                            color: TColor.primaryText,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                        Text(
-                          widget.fee.toStringAsFixed(3),
-                          style: TextStyle(
-                              color: TColor.primaryText,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700),
+                        isLoadingFee
+                            ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
                         )
+                            : Text(
+                          ("${NumberFormat("#,###", "vi_VN").format(fee)}"),
+                          style: GoogleFonts.notoSans(
+                            color: TColor.primaryText,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ],
                     ),
-                    const SizedBox(
-                      height: 8,
-                    ),
+                    const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           "Giảm giá",
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                              color: TColor.primaryText,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500),
+                          style: GoogleFonts.notoSans(
+                            color: TColor.primaryText,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                         Text(
-                          "-15.000",
-                          style: TextStyle(
-                              color: TColor.primaryText,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700),
+                          "-${widget.discount.toStringAsFixed(3)}",
+                          style: GoogleFonts.notoSans(
+                            color: TColor.primaryText,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
                         )
                       ],
                     ),
-                    const SizedBox(
-                      height: 15,
-                    ),
+                    const SizedBox(height: 15),
                     Divider(
                       color: TColor.secondaryText.withOpacity(0.5),
                       height: 1,
                     ),
-                    const SizedBox(
-                      height: 15,
-                    ),
+                    const SizedBox(height: 15),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           "Thành tiền",
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                              color: TColor.primaryText,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500),
+                          style: GoogleFonts.notoSans(
+                            color: TColor.primaryText,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                         Text(
-                          (widget.subtotal + widget.fee - widget.discount)
-                              .toStringAsFixed(3),
-                          style: TextStyle(
-                              color: TColor.primaryText,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700),
+                          ("${NumberFormat("#,###", "vi_VN").format(widget.subtotal + fee - widget.discount)}"),
+                          style: GoogleFonts.notoSans(
+                            color: TColor.primaryText,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
                         )
                       ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(
-                height: 20,
-              ),
+              const SizedBox(height: 20),
               Container(
                 decoration: BoxDecoration(color: TColor.textfield),
                 height: 8,
               ),
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 20, horizontal: 25),
+                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 25),
                 child: RoundButton(
                     title: "Đặt hàng",
                     onPressed: () {
