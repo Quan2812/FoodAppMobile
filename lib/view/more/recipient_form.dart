@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../common/color_extension.dart';
+
 class AddressData {
   final String fullName;
   final String province;
@@ -209,7 +211,7 @@ class _RecipientFormState extends State<RecipientForm> {
               TextFormField(
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
-                  hintText: 'quanhb',
+                  hintText: 'Họ và tên người nhận hàng',
                   hintStyle: GoogleFonts.notoSans(),
                 ),
                 onChanged: (value) {
@@ -340,7 +342,7 @@ class _RecipientFormState extends State<RecipientForm> {
               TextFormField(
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
-                  hintText: 'Đường Xá Gìa Lâm Hà Nội',
+                  hintText: 'Địa chỉ chi tiết: Số nhà, thôn, xóm',
                   hintStyle: GoogleFonts.notoSans(),
                 ),
                 onChanged: (value) {
@@ -366,7 +368,7 @@ class _RecipientFormState extends State<RecipientForm> {
               TextFormField(
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
-                  hintText: '0377892812',
+                  hintText: 'Số điện thoại',
                   hintStyle: GoogleFonts.notoSans(),
                 ),
                 keyboardType: TextInputType.phone,
@@ -393,7 +395,7 @@ class _RecipientFormState extends State<RecipientForm> {
               TextFormField(
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
-                  hintText: 'quanb@gmail.com',
+                  hintText: 'Email',
                   hintStyle: GoogleFonts.notoSans(),
                 ),
                 keyboardType: TextInputType.emailAddress,
@@ -427,10 +429,10 @@ class _RecipientFormState extends State<RecipientForm> {
               ElevatedButton(
                 onPressed: submitForm,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
+                  backgroundColor: TColor.primary,
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                  textStyle: GoogleFonts.notoSans(fontSize: 16),
+                  textStyle: GoogleFonts.notoSans(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 child: Text('Xác nhận'),
               ),

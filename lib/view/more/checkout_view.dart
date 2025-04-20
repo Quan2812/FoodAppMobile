@@ -10,7 +10,7 @@ import 'checkout_message_view.dart';
 
 class CheckoutView extends StatefulWidget {
   final double subtotal;
-  final double discount = 15.000;
+  // final double discount = 15.000;
   const CheckoutView({super.key, required this.subtotal});
 
   @override
@@ -20,19 +20,14 @@ class CheckoutView extends StatefulWidget {
 class _CheckoutViewState extends State<CheckoutView> {
   List paymentArr = [
     {
-      "name": "Tiền mặt",
+      "name": "Thanh toán khi nhận hàng",
       "icon":
       "https://res.cloudinary.com/dfya8dc81/image/upload/v1738811558/cash_ewuwuz.png"
     },
     {
-      "name": "**** **** **** 2187",
+      "name": "Thanh toán qua VNPay",
       "icon":
       "https://res.cloudinary.com/dfya8dc81/image/upload/v1738811583/visa_icon_wk5tiz.png"
-    },
-    {
-      "name": "test@gmail.com",
-      "icon":
-      "https://res.cloudinary.com/dfya8dc81/image/upload/v1738811577/paypal_hyx4tl.png"
     },
   ];
 
@@ -55,13 +50,13 @@ class _CheckoutViewState extends State<CheckoutView> {
     super.initState();
     addressData = AddressData(
       fullName: '',
-      province: 'Brooklyn',
+      province: '',
       provinceId: 0,
       district: '',
       districtId: 0,
       ward: '',
       wardCode: '',
-      address: '653 Nostrand Ave.',
+      address: '',
       phone: '',
       email: '',
       notes: '',
@@ -259,18 +254,18 @@ class _CheckoutViewState extends State<CheckoutView> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        TextButton.icon(
-                          onPressed: () {},
-                          icon: Icon(Icons.add, color: TColor.primary),
-                          label: Text(
-                            "Thêm thẻ",
-                            style: GoogleFonts.notoSans(
-                              color: TColor.primary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        )
+                        // TextButton.icon(
+                        //   onPressed: () {},
+                        //   icon: Icon(Icons.add, color: TColor.primary),
+                        //   label: Text(
+                        //     "Thêm thẻ",
+                        //     style: GoogleFonts.notoSans(
+                        //       color: TColor.primary,
+                        //       fontSize: 13,
+                        //       fontWeight: FontWeight.w700,
+                        //     ),
+                        //   ),
+                        // )
                       ],
                     ),
                     ListView.builder(
@@ -388,29 +383,29 @@ class _CheckoutViewState extends State<CheckoutView> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "Giảm giá",
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.notoSans(
-                            color: TColor.primaryText,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          "-${widget.discount.toStringAsFixed(3)}",
-                          style: GoogleFonts.notoSans(
-                            color: TColor.primaryText,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        )
-                      ],
-                    ),
+                    // const SizedBox(height: 8),
+                    // Row(
+                    //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //   children: [
+                    //     Text(
+                    //       "Giảm giá",
+                    //       textAlign: TextAlign.center,
+                    //       style: GoogleFonts.notoSans(
+                    //         color: TColor.primaryText,
+                    //         fontSize: 13,
+                    //         fontWeight: FontWeight.w500,
+                    //       ),
+                    //     ),
+                    //     Text(
+                    //       "-${widget.discount.toStringAsFixed(3)}",
+                    //       style: GoogleFonts.notoSans(
+                    //         color: TColor.primaryText,
+                    //         fontSize: 13,
+                    //         fontWeight: FontWeight.w700,
+                    //       ),
+                    //     )
+                    //   ],
+                    // ),
                     const SizedBox(height: 15),
                     Divider(
                       color: TColor.secondaryText.withOpacity(0.5),
@@ -430,7 +425,7 @@ class _CheckoutViewState extends State<CheckoutView> {
                           ),
                         ),
                         Text(
-                          ("${NumberFormat("#,###", "vi_VN").format(widget.subtotal + fee - widget.discount)}"),
+                          ("${NumberFormat("#,###", "vi_VN").format(widget.subtotal + fee)}"),
                           style: GoogleFonts.notoSans(
                             color: TColor.primaryText,
                             fontSize: 15,

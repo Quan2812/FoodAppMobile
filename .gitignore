@@ -63,3 +63,4 @@ analysis_options.yaml  # Tùy chọn, thường giữ lại để chia sẻ quy 
 /android/build/
 /android/*.keystore
 /android/*.jks
+/android/app/.cxx/
