@@ -123,44 +123,44 @@ class _HomeViewState extends State<HomeView> {
               ),
               const SizedBox(height: 30),
 
-              /// Giảm giá hôm nay
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: ViewAllTitleRow(
-                  title: "Giảm giá hôm nay",
-                  onView: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MenuItemsView(
-                          mObj: {"name": "Giảm giá hôm nay"},
-                          items: discount,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              ListView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                padding: EdgeInsets.zero,
-                itemCount: discount.length > 3 ? 3 : discount.length,
-                itemBuilder: (context, index) {
-                  var pObj = discount[index] as Map? ?? {};
-                  return PopularRestaurantRow(
-                    pObj: pObj,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ItemDetailsView(item: pObj),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
+              // /// Giảm giá hôm nay
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 20),
+              //   child: ViewAllTitleRow(
+              //     title: "Giảm giá hôm nay",
+              //     onView: () {
+              //       Navigator.push(
+              //         context,
+              //         MaterialPageRoute(
+              //           builder: (context) => MenuItemsView(
+              //             mObj: {"name": "Giảm giá hôm nay"},
+              //             items: discount,
+              //           ),
+              //         ),
+              //       );
+              //     },
+              //   ),
+              // ),
+              // ListView.builder(
+              //   physics: const NeverScrollableScrollPhysics(),
+              //   shrinkWrap: true,
+              //   padding: EdgeInsets.zero,
+              //   itemCount: discount.length > 3 ? 3 : discount.length,
+              //   itemBuilder: (context, index) {
+              //     var pObj = discount[index] as Map? ?? {};
+              //     return PopularRestaurantRow(
+              //       pObj: pObj,
+              //       onTap: () {
+              //         Navigator.push(
+              //           context,
+              //           MaterialPageRoute(
+              //             builder: (context) => ItemDetailsView(item: pObj),
+              //           ),
+              //         );
+              //       },
+              //     );
+              //   },
+              // ),
 
               /// Bán chạy nhất
               Padding(

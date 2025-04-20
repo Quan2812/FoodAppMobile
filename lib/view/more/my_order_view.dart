@@ -31,9 +31,9 @@ class _MyOrderViewState extends State<MyOrderView> {
   /// Gọi API lấy giỏ hàng
   void serviceGetCard() {
     Globs.showHUD();
-    var user_id = Globs.udValueString(KKey.userId) ?? "0";
+    var user_id = Globs.udValueInt(KKey.userId) ?? "0";
     print("Begin call api getCard:");
-    ServiceCall.get("Cart/${user_id}",
+    ServiceCall.get("Cart/${user_id.toString()}",
         withSuccess: (responseObj) async {
           Globs.hideHUD();
           print("Cart: ${responseObj.toString()}");
@@ -85,13 +85,26 @@ class _MyOrderViewState extends State<MyOrderView> {
   }
 
   /// API để cập nhật số lượng sản phẩm
-  void serviceUpdateQuantity(String itemId, int newQuantity, String IsAdd) {
+  void serviceUpdateQuantity(String itemId, int newQuantity, int IsAdd) {
     Globs.showHUD();
-    var user_id = Globs.udValueString(KKey.userId) ?? "0";
-    ServiceCall.get("Cart/update-cart-item/${itemId}/${user_id}/${newQuantity}/${IsAdd}",
+    ServiceCall.post(
+        "cart",
+        {
+          "productId": int.parse(itemId),
+          "quantity": newQuantity,
+          "userId": Globs.udValueInt(KKey.userId),
+          "isAdd": IsAdd
+        },
+        isToken: true,
         withSuccess: (responseObj) async {
-          Globs.hideHUD();
-          serviceGetCard(); // Refresh cart after updating
+          if (responseObj.isNotEmpty) {
+            Globs.hideHUD();
+            mdShowAlert(Globs.appName, responseObj["data"], () {});
+            serviceGetCard(); // Refresh cart after adding
+          } else {
+            Globs.hideHUD();
+            mdShowAlert(Globs.appName, responseObj["data"], () {});
+          }
         },
         failure: (err) async {
           Globs.hideHUD();
@@ -189,78 +202,100 @@ class _MyOrderViewState extends State<MyOrderView> {
                   itemBuilder: ((context, index) {
                     var cObj = cardItems[index] as Map? ?? {};
                     return Container(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 15, horizontal: 25),
-                      child: Row(
+                      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 25),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "${cObj["name"].toString()}",
-                                  style: TextStyle(
-                                      color: TColor.primaryText,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500),
+                          // Tên sản phẩm
+                          Text(
+                            "${cObj["name"]}",
+                            style: TextStyle(
+                                color: TColor.primaryText,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(height: 8),
+
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              // Ảnh sát lề trái
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  (cObj["image"] != null && cObj["image"] is List && cObj["image"].isNotEmpty)
+                                      ? cObj["image"][0]
+                                      : "https://via.placeholder.com/60",
+                                  width: 60,
+                                  height: 60,
+                                  fit: BoxFit.cover,
                                 ),
-                                Row(
+                              ),
+                              const SizedBox(width: 12),
+
+                              // Số lượng và tiền căn đều
+                              Expanded(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,  // tách rõ
                                   children: [
-                                    IconButton(
-                                      onPressed: () {
-                                        int currentQty = cObj["quantity"] ?? 1;
-                                        if (currentQty > 1) {
-                                          serviceUpdateQuantity(
-                                              cObj["id"].toString(),
-                                              1, "0");
-                                        }
-                                      },
-                                      icon: Icon(Icons.remove,
-                                          size: 20, color: TColor.primary),
+                                    // Vùng số lượng
+                                    Row(
+                                      children: [
+                                        IconButton(
+                                          onPressed: () {
+                                            int currentQty = cObj["quantity"] ?? 1;
+                                            if (currentQty > 1) {
+                                              serviceUpdateQuantity(
+                                                  cObj["id"].toString(),
+                                                  1, 0);
+                                            }
+                                          },
+                                          icon: Icon(Icons.remove, size: 20, color: TColor.primary),
+                                        ),
+                                        Text(
+                                          "${cObj["quantity"]}",
+                                          style: TextStyle(
+                                              color: TColor.primaryText,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500),
+                                        ),
+                                        IconButton(
+                                          onPressed: () {
+                                            serviceUpdateQuantity(
+                                                cObj["id"].toString(),
+                                                1, 1);
+                                          },
+                                          icon: Icon(Icons.add, size: 20, color: TColor.primary),
+                                        ),
+                                      ],
                                     ),
+
+                                    // Giá tiền
                                     Text(
-                                      "${cObj["quantity"].toString()}",
-                                      style: TextStyle(
-                                          color: TColor.primaryText,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w500),
-                                    ),
-                                    IconButton(
-                                      onPressed: () {
-                                        int currentQty = cObj["quantity"] ?? 1;
-                                        serviceUpdateQuantity(
-                                            cObj["id"].toString(),
-                                            1, "1");
-                                      },
-                                      icon: Icon(Icons.add,
-                                          size: 20, color: TColor.primary),
-                                    ),
-                                    const SizedBox(width: 140),
-                                    Text(
-                                      ("${NumberFormat("#,###", "vi_VN").format(cObj["price"] * cObj["quantity"])}"),
+                                      "${NumberFormat("#,###", "vi_VN").format(cObj["price"] * cObj["quantity"])}đ",
                                       style: TextStyle(
                                           color: TColor.primaryText,
                                           fontSize: 15,
                                           fontWeight: FontWeight.w700),
                                     ),
-                                    IconButton(
-                                      onPressed: () {
-                                        serviceDeleteItem(cObj["id"].toString(), cObj["quantity"]);
-                                      },
-                                      icon: Icon(Icons.delete,
-                                          size: 20, color: Colors.red),
-                                    ),
                                   ],
                                 ),
-                              ],
-                            ),
+                              ),
+
+                              // Icon delete sát lề phải
+                              IconButton(
+                                onPressed: () {
+                                  serviceDeleteItem(cObj["id"].toString(), cObj["quantity"]);
+                                },
+                                icon: Icon(Icons.delete, size: 20, color: Colors.red),
+                              ),
+                            ],
                           ),
-
-
                         ],
                       ),
                     );
+
+
                   }),
                 ),
               ),

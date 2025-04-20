@@ -217,11 +217,11 @@ class _LoginViewState extends State<LoginView> {
       if (statusCode == 200) {
         print("Login Success");
         Globs.udSet(responseObj[KKey.payload] as Map? ?? {}, Globs.userPayload);
-        Globs.udSet(userId, KKey.userId);
+        Globs.udIntSet(userId, KKey.userId);
         Globs.udSet(userName, KKey.userName);
         Globs.udSet(token, KKey.authToken);
         Globs.udSet(true, Globs.userLogin);
-        print(KKey);
+        print("User_id: ${ Globs.udValueInt(KKey.userId)}");
         print("Login Succees");
         Navigator.pushAndRemoveUntil(
             context,

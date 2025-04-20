@@ -12,7 +12,7 @@ class ServiceCall {
   static Map userPayload = {};
 
   // ✅ Thêm baseUrl
-  static const String baseUrl = "https://10.0.2.2:1228/api"; // <-- chỉnh chỗ này
+  static const String baseUrl = "https://localhost:7064/api"; // <-- chỉnh chỗ này "https://10.0.2.2:1228/api"
 
   // ✅ Hàm POST chuẩn
   static void post(String endpoint, Map<String, dynamic> parameter,
@@ -25,21 +25,18 @@ class ServiceCall {
         if (isToken) {
           headers["Authorization"] = "Bearer ${Globs.getToken()}"; // <-- tự xử lý token
         }
-        print("Đang gọi Login: ${json.encode(parameter)}, ${Uri.parse("$baseUrl/$endpoint")}");
         final response = await http.post(
           Uri.parse("$baseUrl/$endpoint"), // <-- gắn vào baseUrl
           body: json.encode(parameter),
           headers: headers,
         );
-        print("Đang gọi Login: status ${response.statusCode}, body: ${response.body}");
 
         if (kDebugMode) {
-          print("POST [$endpoint]: ${response.body}");
+          print("POST [$endpoint]: ${response.body} ${response.statusCode}");
         }
 
         if (response.statusCode == 200) {
           var jsonObj = json.decode(response.body) as Map<String, dynamic>? ?? {};
-          print("Call Api Login Success ${jsonObj}");
           if (withSuccess != null) await withSuccess(jsonObj);
         }else {
           String errorMsg = "Error: ${response.statusCode}";

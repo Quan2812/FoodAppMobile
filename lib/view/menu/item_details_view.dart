@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:food_delivery/common/extension.dart';
 import 'package:food_delivery/common_widget/round_icon_button.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../common/color_extension.dart';
+import '../../common/globs.dart';
 import '../../models/product.dart';
 import '../../provider/cart_provider.dart';
 import '../more/my_order_view.dart';
@@ -355,26 +357,31 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                                                         fontWeight:
                                                             FontWeight.w700),
                                                   ),
-                                                  const SizedBox(
-                                                    height: 15,
-                                                  ),
+                                                  const SizedBox(height: 15),
                                                   SizedBox(
                                                     width: 130,
                                                     height: 25,
                                                     child: RoundIconButton(
-                                                        title: "Thêm",
-                                                        icon:
-                                                            "https://res.cloudinary.com/dfya8dc81/image/upload/v1738811579/shopping_add_fojqkn.png",
-                                                        color: TColor.primary,
-                                                        onPressed: () {
-                                                          final product = Product.fromJson(widget.item);
-                                                          Provider.of<CartProvider>(context, listen: false).addItem(product, qty);
-                                                          print("Sản phẩm: ${product.nameProduct}");
-                                                          ScaffoldMessenger.of(context).showSnackBar(
-                                                            SnackBar(content: Text('Đã thêm vào giỏ hàng!')),
-                                                          );
-                                                        }),
-                                                  )
+                                                      title: "Thêm",
+                                                      icon: "https://res.cloudinary.com/dfya8dc81/image/upload/v1738811579/shopping_add_fojqkn.png",
+                                                      color: TColor.primary,
+                                                      onPressed: () {
+                                                        final product = Product.fromJson(widget.item);
+                                                        Provider.of<CartProvider>(context, listen: false).addItem(
+                                                            product,
+                                                            qty,
+                                                            1,
+                                                            onSuccess: (success) {
+                                                              mdShowAlert(Globs.appName, success, () {});
+                                                            },
+                                                            onError: (error) {
+                                                              mdShowAlert(Globs.appName, error, () {});
+                                                            }
+                                                        );
+                                                      },
+
+                                                    ),
+                                                  ),
                                                 ],
                                               )),
                                           InkWell(

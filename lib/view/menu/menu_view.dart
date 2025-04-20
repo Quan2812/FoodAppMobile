@@ -32,7 +32,6 @@ class _MenuViewState extends State<MenuView> {
     ServiceCall.get("ProductType",
         withSuccess: (responseObj) async {
           Globs.hideHUD();
-          print("List menu: ${responseObj["data"]?["data"]} ${responseObj["statusCode"]}");
           var statusCode = responseObj["statusCode"];
           if (statusCode == 200) {
             setState(() {
