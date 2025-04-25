@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:food_delivery/common/color_extension.dart';
+import 'package:food_delivery/common/extension.dart';
 import 'package:food_delivery/common_widget/round_button.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import '../../common/globs.dart';
+import '../../common/service_call.dart';
 import 'recipient_form.dart';
 import 'checkout_message_view.dart';
 
 class CheckoutView extends StatefulWidget {
   final double subtotal;
-  // final double discount = 15.000;
-  const CheckoutView({super.key, required this.subtotal});
+  final List<Map<String, dynamic>> cartItems; // Thêm danh sách sản phẩm
+  const CheckoutView({super.key, required this.subtotal, required this.cartItems});
 
   @override
   State<CheckoutView> createState() => _CheckoutViewState();
@@ -33,16 +36,19 @@ class _CheckoutViewState extends State<CheckoutView> {
 
   int selectMethod = -1;
   AddressData? addressData;
-  double fee = 20.000;
+  double fee = 20000;
   bool isLoadingFee = false;
+  bool isLoadingOrder = false;
+  int intendTime = -1; // Thời gian giao hàng dự kiến
 
-  final String ghnToken = 'd69d5ac4-428d-11ee-a6e6-e60958111f48'; // Thay bằng token mới
-  final String shopId = '125587'; // Thay bằng ShopId đúng
+  final String ghnToken = 'd69d5ac4-428d-11ee-a6e6-e60958111f48';
+  final String shopId = '125587';
+  final String orderApiUrl = 'https://10.0.2.2:7064/api/Order'; // Thay bằng URL API thực tế
 
   Map<String, String> get ghnHeaders => {
     "Content-Type": "application/json",
     "Token": ghnToken,
-    "ShopId": shopId, // Thêm lại ShopId theo yêu cầu của API
+    "ShopId": shopId,
   };
 
   @override
@@ -79,7 +85,7 @@ class _CheckoutViewState extends State<CheckoutView> {
     const int weight = 1000;
 
     try {
-      final response = await http.post(
+      final feeResponse = await http.post(
         Uri.parse('https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/fee'),
         headers: ghnHeaders,
         body: jsonEncode({
@@ -90,42 +96,47 @@ class _CheckoutViewState extends State<CheckoutView> {
         }),
       );
 
-      print("Bắt đầu call API lấy phí - toDistrictId: $toDistrictId, toWardCode: $toWardCode");
+      final intendTimeResponse = await http.post(
+        Uri.parse('https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/leadtime'),
+        headers: ghnHeaders,
+        body: jsonEncode({
+          "service_id": 53320,
+          "to_district_id": toDistrictId,
+          "to_ward_code": toWardCode,
+        }),
+      );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['code'] == 200) {
+      if (feeResponse.statusCode == 200) {
+        final feeData = jsonDecode(feeResponse.body);
+        if (feeData['code'] == 200) {
           setState(() {
-            fee = (data['data']['total']).toDouble();
-            isLoadingFee = false;
+            fee = (feeData['data']['total']).toDouble();
           });
         } else {
-          print('API error: ${data['message']}');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Lỗi khi tính phí giao hàng: ${data['message']}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-          setState(() {
-            isLoadingFee = false;
-          });
+          throw Exception('API error: ${feeData['message']}');
         }
       } else {
-        print('Failed to fetch shipping fee: ${response.statusCode}');
-        print('Response body: ${response.body}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Không thể tính phí giao hàng: ${response.statusCode}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        setState(() {
-          isLoadingFee = false;
-        });
+        throw Exception('Failed to fetch shipping fee: ${feeResponse.statusCode}');
       }
+
+      if (intendTimeResponse.statusCode == 200) {
+        final intendTimeData = jsonDecode(intendTimeResponse.body);
+        if (intendTimeData['code'] == 200) {
+          setState(() {
+            intendTime = intendTimeData['data']['leadtime'];
+          });
+        } else {
+          throw Exception('API error: ${intendTimeData['message']}');
+        }
+      } else {
+        throw Exception('Failed to fetch intend time: ${intendTimeResponse.statusCode}');
+      }
+
+      setState(() {
+        isLoadingFee = false;
+      });
     } catch (e) {
-      print('Error fetching shipping fee: $e');
+      print('Error fetching shipping fee or intend time: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Có lỗi xảy ra khi tính phí giao hàng.'),
@@ -136,6 +147,102 @@ class _CheckoutViewState extends State<CheckoutView> {
         isLoadingFee = false;
       });
     }
+  }
+
+  Future<void> createOrder() async {
+    if (selectMethod == -1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng chọn phương thức thanh toán.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (addressData == null || addressData!.fullName.isEmpty || addressData!.phone.isEmpty || addressData!.address.isEmpty || addressData!.email == "") {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng nhập đầy đủ thông tin giao hàng.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    else {
+      setState(() {
+        isLoadingOrder = true;
+      });
+
+      try {
+        Globs.showHUD();
+        final orderRequest = {
+          "paymentId": selectMethod == 0 ? 1 : 1, // 1: COD, 2: VNPay
+          "userId": Globs.udValueInt(KKey.userId),
+          "orderStatusId": 4, // Mặc định như trong React
+          "provinces": addressData!.provinceId,
+          "districts": addressData!.districtId,
+          "wards": addressData!.wardCode,
+          "pickupTime": intendTime,
+          "originalPrice": widget.subtotal,
+          "noteOrder": addressData!.notes,
+          "actualPrice": widget.subtotal + fee,
+          "fullName": addressData!.fullName,
+          "phone": addressData!.phone,
+          "address": addressData!.address,
+          "email": addressData!.email,
+          "orderDetailDtos": widget.cartItems.map((item) {
+            return {
+              "productId": item['id'], // Giả định item có id
+              "quantity": item['quantity'],
+              "price": item['price'] - (item['price'] * (item['discount'] ?? 0) / 100),
+            };
+          }).toList(),
+        };
+        ServiceCall.post(
+            "Order",
+            orderRequest,
+            isToken: true,
+            withSuccess: (responseObj) async {
+              print("res add caet ${responseObj}");
+              Globs.hideHUD();
+              if (responseObj["statusCode"] == 200) {
+                mdShowAlert(
+                    Globs.appName,
+                    responseObj[KKey.message] as String? ?? "Đặt hàng thành công",
+                        () {});  // báo cho UI
+                // Xóa giỏ hàng hoặc chuyển hướng
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const CheckoutMessageView()),
+                );
+              } else {
+                mdShowAlert(
+                    Globs.appName,
+                    responseObj[KKey.message] as String? ?? "Đặt hàng thất bại",
+                        () {});
+              }
+            },
+            failure: (err) async {
+              Globs.hideHUD();
+              mdShowAlert(Globs.appName, err.toString(), () {});
+            });
+
+      } catch (e) {
+        print('Error creating order: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đặt hàng thất bại: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
+        setState(() {
+          isLoadingOrder = false;
+        });
+      }
+    }
+
   }
 
   @override
@@ -208,7 +315,9 @@ class _CheckoutViewState extends State<CheckoutView> {
                           onPressed: () async {
                             final result = await Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => RecipientForm()),
+                              MaterialPageRoute(
+                                builder: (context) => RecipientForm(initialAddressData: addressData),
+                              ),
                             );
                             if (result != null && result is AddressData) {
                               setState(() {
@@ -254,18 +363,6 @@ class _CheckoutViewState extends State<CheckoutView> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        // TextButton.icon(
-                        //   onPressed: () {},
-                        //   icon: Icon(Icons.add, color: TColor.primary),
-                        //   label: Text(
-                        //     "Thêm thẻ",
-                        //     style: GoogleFonts.notoSans(
-                        //       color: TColor.primary,
-                        //       fontSize: 13,
-                        //       fontWeight: FontWeight.w700,
-                        //     ),
-                        //   ),
-                        // )
                       ],
                     ),
                     ListView.builder(
@@ -383,29 +480,6 @@ class _CheckoutViewState extends State<CheckoutView> {
                         ),
                       ],
                     ),
-                    // const SizedBox(height: 8),
-                    // Row(
-                    //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    //   children: [
-                    //     Text(
-                    //       "Giảm giá",
-                    //       textAlign: TextAlign.center,
-                    //       style: GoogleFonts.notoSans(
-                    //         color: TColor.primaryText,
-                    //         fontSize: 13,
-                    //         fontWeight: FontWeight.w500,
-                    //       ),
-                    //     ),
-                    //     Text(
-                    //       "-${widget.discount.toStringAsFixed(3)}",
-                    //       style: GoogleFonts.notoSans(
-                    //         color: TColor.primaryText,
-                    //         fontSize: 13,
-                    //         fontWeight: FontWeight.w700,
-                    //       ),
-                    //     )
-                    //   ],
-                    // ),
                     const SizedBox(height: 15),
                     Divider(
                       color: TColor.secondaryText.withOpacity(0.5),
@@ -445,16 +519,9 @@ class _CheckoutViewState extends State<CheckoutView> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 25),
                 child: RoundButton(
-                    title: "Đặt hàng",
-                    onPressed: () {
-                      showModalBottomSheet(
-                          context: context,
-                          backgroundColor: Colors.transparent,
-                          isScrollControlled: true,
-                          builder: (context) {
-                            return const CheckoutMessageView();
-                          });
-                    }),
+                  title: isLoadingOrder ? "Đang xử lý..." : "Đặt hàng",
+                  onPressed: createOrder,
+                ),
               ),
             ],
           ),

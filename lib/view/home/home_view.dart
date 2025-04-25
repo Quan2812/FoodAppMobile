@@ -162,46 +162,46 @@ class _HomeViewState extends State<HomeView> {
               //   },
               // ),
 
-              /// Bán chạy nhất
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: ViewAllTitleRow(
-                  title: "Bán chạy nhất",
-                  onView: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MenuItemsView(
-                          mObj: {"name": "Bán chạy nhất"},
-                          items: mostPopArr,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              SizedBox(
-                height: 200,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
-                  itemCount: mostPopArr.length > 3 ? 3 : mostPopArr.length,
-                  itemBuilder: (context, index) {
-                    var mObj = mostPopArr[index] as Map? ?? {};
-                    return MostPopularCell(
-                      mObj: mObj,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ItemDetailsView(item: mObj),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
+              // /// Bán chạy nhất
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 20),
+              //   child: ViewAllTitleRow(
+              //     title: "Bán chạy nhất",
+              //     onView: () {
+              //       Navigator.push(
+              //         context,
+              //         MaterialPageRoute(
+              //           builder: (context) => MenuItemsView(
+              //             mObj: {"name": "Bán chạy nhất"},
+              //             items: mostPopArr,
+              //           ),
+              //         ),
+              //       );
+              //     },
+              //   ),
+              // ),
+              // SizedBox(
+              //   height: 200,
+              //   child: ListView.builder(
+              //     scrollDirection: Axis.horizontal,
+              //     padding: const EdgeInsets.symmetric(horizontal: 15),
+              //     itemCount: mostPopArr.length > 3 ? 3 : mostPopArr.length,
+              //     itemBuilder: (context, index) {
+              //       var mObj = mostPopArr[index] as Map? ?? {};
+              //       return MostPopularCell(
+              //         mObj: mObj,
+              //         onTap: () {
+              //           Navigator.push(
+              //             context,
+              //             MaterialPageRoute(
+              //               builder: (context) => ItemDetailsView(item: mObj),
+              //             ),
+              //           );
+              //         },
+              //       );
+              //     },
+              //   ),
+              // ),
 
               /// Mua gần đây
               Padding(

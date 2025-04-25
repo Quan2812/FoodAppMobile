@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../common/color_extension.dart';
 
 class MostPopularCell extends StatelessWidget {
@@ -47,7 +48,7 @@ class MostPopularCell extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "${mObj["price"].replaceAll(".", ",")} VND",
+                  "${NumberFormat("#,###", "vi_VN").format(mObj["price"])}",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: TColor.secondaryText,

@@ -18,7 +18,7 @@ class MyOrderView extends StatefulWidget {
 }
 
 class _MyOrderViewState extends State<MyOrderView> {
-  List<dynamic> cardItems = [];
+  List<Map<String, dynamic>> cardItems = []; // Sửa kiểu từ List<dynamic> thành List<Map<String, dynamic>>
   bool isLoading = true;
   double subtotal = 0;
 
@@ -37,9 +37,12 @@ class _MyOrderViewState extends State<MyOrderView> {
         withSuccess: (responseObj) async {
           Globs.hideHUD();
           print("Cart: ${responseObj.toString()}");
-          if (responseObj.isNotEmpty) {
+          if (responseObj.isNotEmpty && responseObj["data"] != null) {
             setState(() {
-              cardItems = responseObj["data"] ?? [];
+              // Ép kiểu responseObj["data"] thành List<Map<String, dynamic>>
+              cardItems = (responseObj["data"] as List)
+                  .map((item) => Map<String, dynamic>.from(item))
+                  .toList();
               isLoading = false;
               subtotal = getSubtotal(cardItems);
             });
@@ -59,11 +62,11 @@ class _MyOrderViewState extends State<MyOrderView> {
   }
 
   /// Tính tổng tạm tính
-  double getSubtotal(List<dynamic> itemArr) {
+  double getSubtotal(List<Map<String, dynamic>> itemArr) {
     double subtotal = 0;
     for (var item in itemArr) {
-      var price = item["price"] ?? 0;
-      var qty = item["quantity"] ?? 0;
+      var price = item["price"]?.toDouble() ?? 0.0; // Ép kiểu an toàn
+      var qty = item["quantity"]?.toDouble() ?? 0.0; // Ép kiểu an toàn
       subtotal += price * qty;
     }
     return subtotal;
@@ -85,7 +88,7 @@ class _MyOrderViewState extends State<MyOrderView> {
   }
 
   /// API để cập nhật số lượng sản phẩm
-  void serviceUpdateQuantity(String itemId, int newQuantity, int IsAdd) {
+  void serviceUpdateQuantity(String itemId, int newQuantity, int isAdd) {
     Globs.showHUD();
     ServiceCall.post(
         "cart",
@@ -93,7 +96,7 @@ class _MyOrderViewState extends State<MyOrderView> {
           "productId": int.parse(itemId),
           "quantity": newQuantity,
           "userId": Globs.udValueInt(KKey.userId),
-          "isAdd": IsAdd
+          "isAdd": isAdd
         },
         isToken: true,
         withSuccess: (responseObj) async {
@@ -165,8 +168,7 @@ class _MyOrderViewState extends State<MyOrderView> {
                 ),
               ),
               Padding(
-                padding:
-                const EdgeInsets.symmetric(vertical: 15, horizontal: 25),
+                padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 25),
                 child: Row(
                   children: [
                     Expanded(
@@ -223,7 +225,9 @@ class _MyOrderViewState extends State<MyOrderView> {
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
                                 child: Image.network(
-                                  (cObj["image"] != null && cObj["image"] is List && cObj["image"].isNotEmpty)
+                                  (cObj["image"] != null &&
+                                      cObj["image"] is List &&
+                                      cObj["image"].isNotEmpty)
                                       ? cObj["image"][0]
                                       : "https://via.placeholder.com/60",
                                   width: 60,
@@ -236,7 +240,7 @@ class _MyOrderViewState extends State<MyOrderView> {
                               // Số lượng và tiền căn đều
                               Expanded(
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,  // tách rõ
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     // Vùng số lượng
                                     Row(
@@ -246,11 +250,11 @@ class _MyOrderViewState extends State<MyOrderView> {
                                             int currentQty = cObj["quantity"] ?? 1;
                                             if (currentQty > 1) {
                                               serviceUpdateQuantity(
-                                                  cObj["id"].toString(),
-                                                  1, 0);
+                                                  cObj["id"].toString(), 1, 0);
                                             }
                                           },
-                                          icon: Icon(Icons.remove, size: 20, color: TColor.primary),
+                                          icon: Icon(Icons.remove,
+                                              size: 20, color: TColor.primary),
                                         ),
                                         Text(
                                           "${cObj["quantity"]}",
@@ -262,10 +266,10 @@ class _MyOrderViewState extends State<MyOrderView> {
                                         IconButton(
                                           onPressed: () {
                                             serviceUpdateQuantity(
-                                                cObj["id"].toString(),
-                                                1, 1);
+                                                cObj["id"].toString(), 1, 1);
                                           },
-                                          icon: Icon(Icons.add, size: 20, color: TColor.primary),
+                                          icon: Icon(Icons.add,
+                                              size: 20, color: TColor.primary),
                                         ),
                                       ],
                                     ),
@@ -285,7 +289,8 @@ class _MyOrderViewState extends State<MyOrderView> {
                               // Icon delete sát lề phải
                               IconButton(
                                 onPressed: () {
-                                  serviceDeleteItem(cObj["id"].toString(), cObj["quantity"]);
+                                  serviceDeleteItem(
+                                      cObj["id"].toString(), cObj["quantity"]);
                                 },
                                 icon: Icon(Icons.delete, size: 20, color: Colors.red),
                               ),
@@ -294,8 +299,6 @@ class _MyOrderViewState extends State<MyOrderView> {
                         ],
                       ),
                     );
-
-
                   }),
                 ),
               ),
@@ -328,11 +331,17 @@ class _MyOrderViewState extends State<MyOrderView> {
                     RoundButton(
                         title: "Thanh toán",
                         onPressed: () {
+                          if (cardItems.isEmpty) {
+                            mdShowAlert(Globs.appName, "Giỏ hàng trống!", () {});
+                            return;
+                          }
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  CheckoutView(subtotal: subtotal),
+                              builder: (context) => CheckoutView(
+                                subtotal: subtotal,
+                                cartItems: cardItems,
+                              ),
                             ),
                           );
                         }),

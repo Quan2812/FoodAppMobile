@@ -13,6 +13,8 @@ class ServiceCall {
 
   // ✅ Thêm baseUrl
   static const String baseUrl = "https://foood-tour.online/api"; // <-- chỉnh chỗ này "https://10.0.2.2:1228/api"
+  // static const String baseUrl = "https://10.0.2.2:7064/api"; // <-- chỉnh chỗ này "https://10.0.2.2:1228/api"
+
 
   // ✅ Hàm POST chuẩn
   static void post(String endpoint, Map<String, dynamic> parameter,
@@ -30,11 +32,6 @@ class ServiceCall {
           body: json.encode(parameter),
           headers: headers,
         );
-
-        if (kDebugMode) {
-          print("POST [$endpoint]: ${response.body} ${response.statusCode}");
-        }
-
         if (response.statusCode == 200) {
           var jsonObj = json.decode(response.body) as Map<String, dynamic>? ?? {};
           if (withSuccess != null) await withSuccess(jsonObj);
@@ -73,11 +70,6 @@ class ServiceCall {
           Uri.parse("$baseUrl/$endpoint"),
           headers: headers,
         );
-
-        if (kDebugMode) {
-          print("GET [$endpoint]: ${response.body}");
-        }
-
         if (response.statusCode == 200) {
           var jsonObj = json.decode(response.body) as Map<String, dynamic>? ?? {};
           if (withSuccess != null) await withSuccess(jsonObj);

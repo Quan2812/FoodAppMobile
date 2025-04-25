@@ -44,6 +44,16 @@ class Province {
       name: json['ProvinceName'],
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          other is Province &&
+              runtimeType == other.runtimeType &&
+              provinceId == other.provinceId;
+
+  @override
+  int get hashCode => provinceId.hashCode;
 }
 
 class District {
@@ -57,6 +67,16 @@ class District {
       name: json['DistrictName'],
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          other is District &&
+              runtimeType == other.runtimeType &&
+              districtId == other.districtId;
+
+  @override
+  int get hashCode => districtId.hashCode;
 }
 
 class Ward {
@@ -70,20 +90,34 @@ class Ward {
       name: json['WardName'],
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          other is Ward &&
+              runtimeType == other.runtimeType &&
+              wardCode == other.wardCode;
+
+  @override
+  int get hashCode => wardCode.hashCode;
 }
 
 class RecipientForm extends StatefulWidget {
+  final AddressData? initialAddressData;
+
+  const RecipientForm({super.key, this.initialAddressData});
+
   @override
   _RecipientFormState createState() => _RecipientFormState();
 }
 
 class _RecipientFormState extends State<RecipientForm> {
   final _formKey = GlobalKey<FormState>();
-  String fullName = '';
-  String address = '';
-  String phone = '';
-  String email = '';
-  String notes = '';
+  late String fullName;
+  late String address;
+  late String phone;
+  late String email;
+  late String notes;
 
   List<Province> provinces = [];
   List<District> districts = [];
@@ -106,64 +140,184 @@ class _RecipientFormState extends State<RecipientForm> {
   @override
   void initState() {
     super.initState();
+    // Khởi tạo các trường với giá trị từ initialAddressData hoặc rỗng
+    fullName = widget.initialAddressData?.fullName ?? '';
+    address = widget.initialAddressData?.address ?? '';
+    phone = widget.initialAddressData?.phone ?? '';
+    email = widget.initialAddressData?.email ?? '';
+    notes = widget.initialAddressData?.notes ?? '';
+
     fetchProvinces();
+
+    // Nếu có initialAddressData, khởi tạo các dropdown
+    if (widget.initialAddressData != null) {
+      _initializeAddressData();
+    }
   }
 
   Future<void> fetchProvinces() async {
-    final response = await http.get(
-      Uri.parse('${ghnApiBaseUrl}master-data/province'),
-      headers: ghnHeaders,
-    );
+    try {
+      final response = await http.get(
+        Uri.parse('${ghnApiBaseUrl}master-data/province'),
+        headers: ghnHeaders,
+      );
 
-    if (response.statusCode == 200) {
-      final String responseBody = utf8.decode(response.bodyBytes);
-      final data = jsonDecode(responseBody);
-      print('Provinces data (decoded): ${data['data']}');
-      setState(() {
-        provinces = (data['data'] as List).map((e) => Province.fromJson(e)).toList();
-      });
-    } else {
-      print('Failed to fetch provinces: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final String responseBody = utf8.decode(response.bodyBytes);
+        final data = jsonDecode(responseBody);
+        print('Provinces data (decoded): ${data['data']}');
+        setState(() {
+          // Loại bỏ trùng lặp tỉnh/thành dựa trên provinceId
+          provinces = (data['data'] as List)
+              .map((e) => Province.fromJson(e))
+              .toSet() // Loại bỏ trùng lặp
+              .toList();
+        });
+      } else {
+        print('Failed to fetch provinces: ${response.statusCode}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Không thể tải danh sách tỉnh/thành'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error fetching provinces: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Có lỗi xảy ra khi tải danh sách tỉnh/thành'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
   Future<void> fetchDistricts(int provinceId) async {
-    final response = await http.get(
-      Uri.parse('${ghnApiBaseUrl}master-data/district?province_id=$provinceId'),
-      headers: ghnHeaders,
-    );
+    try {
+      final response = await http.get(
+        Uri.parse('${ghnApiBaseUrl}master-data/district?province_id=$provinceId'),
+        headers: ghnHeaders,
+      );
 
-    if (response.statusCode == 200) {
-      final String responseBody = utf8.decode(response.bodyBytes);
-      final data = jsonDecode(responseBody);
-      print('Districts data (decoded): ${data['data']}');
-      setState(() {
-        districts = (data['data'] as List).map((e) => District.fromJson(e)).toList();
-        selectedDistrict = null;
-        wards = [];
-        selectedWard = null;
-      });
-    } else {
-      print('Failed to fetch districts: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final String responseBody = utf8.decode(response.bodyBytes);
+        final data = jsonDecode(responseBody);
+        print('Districts data (decoded): ${data['data']}');
+        setState(() {
+          districts = (data['data'] as List)
+              .map((e) => District.fromJson(e))
+              .toSet() // Loại bỏ trùng lặp
+              .toList();
+          selectedDistrict = null;
+          wards = [];
+          selectedWard = null;
+        });
+      } else {
+        print('Failed to fetch districts: ${response.statusCode}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Không thể tải danh sách quận/huyện'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error fetching districts: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Có lỗi xảy ra khi tải danh sách quận/huyện'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
   Future<void> fetchWards(int districtId) async {
-    final response = await http.get(
-      Uri.parse('${ghnApiBaseUrl}master-data/ward?district_id=$districtId'),
-      headers: ghnHeaders,
-    );
+    try {
+      final response = await http.get(
+        Uri.parse('${ghnApiBaseUrl}master-data/ward?district_id=$districtId'),
+        headers: ghnHeaders,
+      );
 
-    if (response.statusCode == 200) {
-      final String responseBody = utf8.decode(response.bodyBytes);
-      final data = jsonDecode(responseBody);
-      print('Wards data (decoded): ${data['data']}');
+      if (response.statusCode == 200) {
+        final String responseBody = utf8.decode(response.bodyBytes);
+        final data = jsonDecode(responseBody);
+        print('Wards data (decoded): ${data['data']}');
+        setState(() {
+          wards = (data['data'] as List)
+              .map((e) => Ward.fromJson(e))
+              .toSet() // Loại bỏ trùng lặp
+              .toList();
+          selectedWard = null;
+        });
+      } else {
+        print('Failed to fetch wards: ${response.statusCode}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Không thể tải danh sách phường/xã'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error fetching wards: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Có lỗi xảy ra khi tải danh sách phường/xã'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _initializeAddressData() async {
+    if (widget.initialAddressData == null) return;
+
+    // Đợi provinces được tải
+    await fetchProvinces();
+    if (provinces.isNotEmpty) {
+      final initialProvinceId = widget.initialAddressData!.provinceId;
+      final matchingProvince = provinces.firstWhere(
+            (province) => province.provinceId == initialProvinceId,
+        orElse: () => provinces.first, // Mặc định chọn tỉnh đầu tiên nếu không tìm thấy
+      );
+
       setState(() {
-        wards = (data['data'] as List).map((e) => Ward.fromJson(e)).toList();
-        selectedWard = null;
+        selectedProvince = matchingProvince;
       });
-    } else {
-      print('Failed to fetch wards: ${response.statusCode}');
+
+      // Tải quận/huyện nếu có provinceId hợp lệ
+      if (matchingProvince.provinceId == initialProvinceId) {
+        await fetchDistricts(initialProvinceId);
+        if (districts.isNotEmpty) {
+          final initialDistrictId = widget.initialAddressData!.districtId;
+          final matchingDistrict = districts.firstWhere(
+                (district) => district.districtId == initialDistrictId,
+            orElse: () => districts.first,
+          );
+
+          setState(() {
+            selectedDistrict = matchingDistrict;
+          });
+
+          // Tải phường/xã nếu có districtId hợp lệ
+          if (matchingDistrict.districtId == initialDistrictId) {
+            await fetchWards(initialDistrictId);
+            if (wards.isNotEmpty) {
+              final initialWardCode = widget.initialAddressData!.wardCode;
+              final matchingWard = wards.firstWhere(
+                    (ward) => ward.wardCode == initialWardCode,
+                orElse: () => wards.first,
+              );
+
+              setState(() {
+                selectedWard = matchingWard;
+              });
+            }
+          }
+        }
+      }
     }
   }
 
@@ -209,6 +363,7 @@ class _RecipientFormState extends State<RecipientForm> {
                 ),
               ),
               TextFormField(
+                initialValue: fullName,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
                   hintText: 'Họ và tên người nhận hàng',
@@ -250,6 +405,10 @@ class _RecipientFormState extends State<RecipientForm> {
                 onChanged: (Province? newValue) {
                   setState(() {
                     selectedProvince = newValue;
+                    selectedDistrict = null;
+                    selectedWard = null;
+                    districts = [];
+                    wards = [];
                     if (newValue != null) {
                       fetchDistricts(newValue.provinceId);
                     }
@@ -286,6 +445,8 @@ class _RecipientFormState extends State<RecipientForm> {
                 onChanged: (District? newValue) {
                   setState(() {
                     selectedDistrict = newValue;
+                    selectedWard = null;
+                    wards = [];
                     if (newValue != null) {
                       fetchWards(newValue.districtId);
                     }
@@ -340,6 +501,7 @@ class _RecipientFormState extends State<RecipientForm> {
                 ),
               ),
               TextFormField(
+                initialValue: address,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
                   hintText: 'Địa chỉ chi tiết: Số nhà, thôn, xóm',
@@ -366,6 +528,7 @@ class _RecipientFormState extends State<RecipientForm> {
                 ),
               ),
               TextFormField(
+                initialValue: phone,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
                   hintText: 'Số điện thoại',
@@ -393,6 +556,7 @@ class _RecipientFormState extends State<RecipientForm> {
                 ),
               ),
               TextFormField(
+                initialValue: email,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
                   hintText: 'Email',
@@ -404,6 +568,12 @@ class _RecipientFormState extends State<RecipientForm> {
                     email = value;
                   });
                 },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Vui lòng nhập email';
+                  }
+                  return null;
+                },
               ),
               SizedBox(height: 16),
               Text(
@@ -414,6 +584,7 @@ class _RecipientFormState extends State<RecipientForm> {
                 ),
               ),
               TextFormField(
+                initialValue: notes,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
                   hintStyle: GoogleFonts.notoSans(),
